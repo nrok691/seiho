@@ -265,3 +265,43 @@ def A_joint(x: float, y: float, i: float) -> float:
 def A_last(x: float, y: float, i: float) -> float:
     """最終生存者保険 A_{xy-bar} = A_x + A_y - A_{xy}."""
     return A_whole(x, i) + A_whole(y, i) - A_joint(x, y, i)
+
+
+# ---------------------------------------------------------------- 変動給付・分散（第3章）
+
+def A_term_from_table(l: dict, x: int, n: int, i: float) -> float:
+    """l_x の表（dict）から定期保険 A^1_{x:n} を計算する（死亡年度末払）。"""
+    v = v_of(i)
+    return sum((v ** (t + 1)) * (l[x + t] - l[x + t + 1]) / l[x] for t in range(n))
+
+
+def IA_term(x: float, n: int, i: float) -> float:
+    """逓増定期保険 (IA)^1_{x:n} = sum (t+1) v^{t+1} _t|q_x."""
+    v = v_of(i)
+    return sum((t + 1) * (v ** (t + 1)) * tpx(float(t), x) * qx(x + t) for t in range(n))
+
+
+def IA_whole(x: float, i: float) -> float:
+    """逓増終身保険 (IA)_x."""
+    return IA_term(x, int(OMEGA - x), i)
+
+
+def DA_term(x: float, n: int, i: float) -> float:
+    """逓減定期保険 (DA)^1_{x:n} = sum (n-t) v^{t+1} _t|q_x."""
+    v = v_of(i)
+    return sum((n - t) * (v ** (t + 1)) * tpx(float(t), x) * qx(x + t) for t in range(n))
+
+
+def second_moment_rate(i: float) -> float:
+    """2次の積率に用いる利率 j = 2i + i^2（v^2 = 1/(1+j)）."""
+    return 2.0 * i + i * i
+
+
+def var_Z_whole(x: float, i: float) -> float:
+    """終身保険の現価確率変数の分散 Var(Z) = ^2A_x - (A_x)^2."""
+    return A_whole(x, second_moment_rate(i)) - A_whole(x, i) ** 2
+
+
+def var_Z_endow(x: float, n: int, i: float) -> float:
+    """養老保険の現価確率変数の分散."""
+    return A_endow(x, n, second_moment_rate(i)) - A_endow(x, n, i) ** 2
