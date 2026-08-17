@@ -14,12 +14,14 @@ export type GuideStep = {
   wrongHint: string;
 };
 
+/**
+ * 誘導版だけが持つ情報。
+ * 論点名・公式問題画像・公式解答画像・正答は試験セット共通なので、
+ * `app/exam/2025-q2.ts` の `getQuestionMeta(id)` から取得する。
+ */
 export type GuidedQuestion = {
   id: number;
-  topic: string;
   title: string;
-  image: string;
-  solutions: string[];
   finalAnswer: string;
   goal: string;
   steps: GuideStep[];
@@ -28,10 +30,7 @@ export type GuidedQuestion = {
 export const GUIDED_QUESTIONS: GuidedQuestion[] = [
   {
     id: 1,
-    topic: "生命力・平均寿命",
     title: "死力から生存関数を組み立てる",
-    image: "/exam/2025-q2/q1.webp",
-    solutions: ["/exam/2025-q2/s1.webp"],
     finalAnswer: "（C）480",
     goal: "死力を積分して生存関数へ戻し、平均寿命の式を作る。",
     steps: [
@@ -92,10 +91,7 @@ export const GUIDED_QUESTIONS: GuidedQuestion[] = [
   },
   {
     id: 2,
-    topic: "多重脱退・定常人口",
     title: "率を人数へ戻して連立する",
-    image: "/exam/2025-q2/q2.webp",
-    solutions: ["/exam/2025-q2/s2.webp", "/exam/2025-q2/s2b.webp"],
     finalAnswer: "①（C）0.0711　②（H）0.00885",
     goal: "死亡・退職を人数の収支式に直し、定常人口の条件と連立する。",
     steps: [
@@ -170,10 +166,7 @@ export const GUIDED_QUESTIONS: GuidedQuestion[] = [
   },
   {
     id: 3,
-    topic: "年金・計算基数",
     title: "公式を定義へ戻して判定する",
-    image: "/exam/2025-q2/q3.webp",
-    solutions: ["/exam/2025-q2/s3.webp"],
     finalAnswer: "（A）（C）（D）",
     goal: "開始時点・支払回数・添字を一つずつ検算する。",
     steps: [
@@ -247,10 +240,7 @@ export const GUIDED_QUESTIONS: GuidedQuestion[] = [
   },
   {
     id: 4,
-    topic: "保険現価・微分",
     title: "利率微分を級数から追う",
-    image: "/exam/2025-q2/q4.webp",
-    solutions: ["/exam/2025-q2/s4.webp"],
     finalAnswer: "（J）",
     goal: "Aₓを年金現価で表し、vの微分から加重年金へつなぐ。",
     steps: [
@@ -310,10 +300,7 @@ export const GUIDED_QUESTIONS: GuidedQuestion[] = [
   },
   {
     id: 5,
-    topic: "返戻金・責任準備金",
     title: "共通部分を消して差だけを見る",
-    image: "/exam/2025-q2/q5.webp",
-    solutions: ["/exam/2025-q2/s5.webp"],
     finalAnswer: "（G）0.060",
     goal: "第6年度以降の共通給付を消去し、初期5年間の差をαへ集約する。",
     steps: [
@@ -373,10 +360,7 @@ export const GUIDED_QUESTIONS: GuidedQuestion[] = [
   },
   {
     id: 6,
-    topic: "多生命年金",
     title: "生存人数ごとの給付を分解する",
-    image: "/exam/2025-q2/q6.webp",
-    solutions: ["/exam/2025-q2/s6.webp"],
     finalAnswer: "（B）äₓₓ+äᵧᵧ+4äₓᵧ",
     goal: "生存者4人・3人・2人の現価を別々に作り、最後に相殺する。",
     steps: [
@@ -449,10 +433,7 @@ export const GUIDED_QUESTIONS: GuidedQuestion[] = [
   },
   {
     id: 7,
-    topic: "就業不能保険",
     title: "状態別の給付現価を組み上げる",
-    image: "/exam/2025-q2/q7.webp",
-    solutions: ["/exam/2025-q2/s7.webp"],
     finalAnswer: "（H）0.0061",
     goal: "保険料・就業不能給付・状態別死亡給付を別々に現価化する。",
     steps: [
@@ -525,10 +506,7 @@ export const GUIDED_QUESTIONS: GuidedQuestion[] = [
   },
   {
     id: 8,
-    topic: "入院給付・分布",
     title: "期待給付日数の比へ落とす",
-    image: "/exam/2025-q2/q8.webp",
-    solutions: ["/exam/2025-q2/s8.webp"],
     finalAnswer: "（H）1.50",
     goal: "両商品の共通因子を消し、日数区分ごとの期待給付額だけを比較する。",
     steps: [

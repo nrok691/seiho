@@ -30,17 +30,19 @@ ACTUARY QUESTは、アクチュアリー試験「生保数理」の実際の過�
 
 | 場所 | 責務 |
 |---|---|
-| `app/page.tsx` | 通常版。問題定義、採点、スコア、メモ、端末保存、全画面状態 |
+| `app/exam/2025-q2.ts` | 試験セット共通のメタデータ。論点名、出題形式、正答、公式配点、部分点、問題・解答画像、PAR |
+| `app/page.tsx` | 通常版。レイド用タイトルと解法の軸、採点、スコア、メモ、端末保存、全画面状態 |
 | `app/globals.css` | 通常版と共通のグローバルスタイル |
 | `app/guided/page.tsx` | 誘導版。マップ、ステップ進行、フィードバック、完了保存 |
 | `app/guided/data.ts` | 誘導版8問・37ステップの型とデータ |
 | `app/guided/guided.module.css` | 誘導版専用スタイル |
 | `public/exam/2025-q2/` | 公式問題 `q*.webp` と公式解答 `s*.webp` |
 | `app/layout.tsx` | メタデータ、モバイルviewport、全体レイアウト |
+| `tests/exam-data.test.mjs` | 試験データの整合性テスト（`npm run test:data`、依存不要） |
 | `tests/rendered-html.test.mjs` | ビルド成果物がHTMLを返すことの最小テスト |
 | `.openai/hosting.json` | OpenAI Sitesの識別・バインディング情報 |
 
-通常版の問題データは現在 `app/page.tsx` 内、誘導版は `app/guided/data.ts` にあります。同じ問題の画像パスと正答が2か所に存在するため、一方だけを更新しないでください。
+論点名、正答、公式配点、問題・解答画像、PARは `app/exam/2025-q2.ts` が唯一の出所です。通常版と誘導版はここから読み取るので、これらを2か所に書かないでください。各モードに残すのは、通常版のレイド用タイトル・`axis`・`options` と、誘導版の `goal`・`steps`・`finalAnswer` だけです。
 
 ## 端末保存の契約
 

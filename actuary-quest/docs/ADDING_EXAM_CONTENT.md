@@ -14,14 +14,15 @@
 
 ## 2. 既存問題の修正
 
-現在、同じ問題に関する情報が2か所にあります。
+問題に関する情報は3か所に分かれています。
 
-- 通常版: `app/page.tsx` の `QUESTIONS`
-- 誘導版: `app/guided/data.ts` の `GUIDED_QUESTIONS`
+- 試験セット共通: `app/exam/2025-q2.ts` の `QUESTION_META`（論点名、出題形式、正答、公式配点、部分点、問題・解答画像、PAR）
+- 通常版固有: `app/page.tsx` の `QUESTIONS`（レイド用タイトル、`axis`、`options`）
+- 誘導版固有: `app/guided/data.ts` の `GUIDED_QUESTIONS`（`goal`、`steps`、`finalAnswer`）
 
-正答、題名、画像パスを変える場合は両方を確認します。
+正答、公式配点、画像パス、PARを変える場合は `app/exam/2025-q2.ts` だけを直します。同じ値を各モードへ書き戻さないでください。変更後は `npm run test:data` で、誘導版の `finalAnswer` と通常版の正答が食い違っていないかを確認します。
 
-通常版の正答は文字列配列です。
+正答は文字列配列です。
 
 ```ts
 correct: ["C"]          // 単一選択
@@ -78,22 +79,33 @@ solutions: [
 
 ## 4. 通常版の問題定義
 
-`Question` の各項目:
+通常版の `Question` は、共通メタデータ `QuestionMeta` に通常版固有の3項目を足したものです。
+
+`app/exam/2025-q2.ts` の `QuestionMeta`:
 
 | 項目 | 意味 |
 |---|---|
 | `id` | 1始まりの連続した小問番号 |
 | `topic` | 結果・復習一覧に出す論点名 |
-| `title` | レイド用の短い問題タイトル |
-| `axis` | 任意ヒントとして出す解法の軸 |
 | `mode` | `single`、`dual`、`multi` |
-| `options` | 解答欄に表示する文字 |
 | `correct` | 正答文字列の配列 |
+| `points` | 公式配点 |
+| `partial` | 解答欄ごとに配点が分かれる場合の内訳。問2は ①C=3点、②H=4点 |
 | `image` | 公式問題画像 |
 | `solutions` | 公式解答画像の配列 |
 | `par` | 目標秒数 |
 
-現在の実装には `QUESTIONS[attempt.id - 1]` という参照があります。`id` を飛び番にしたり、配列順とずらしたりしないでください。
+`app/page.tsx` の `QUESTIONS` で足すもの:
+
+| 項目 | 意味 |
+|---|---|
+| `title` | レイド用の短い問題タイトル |
+| `axis` | 任意ヒントとして出す解法の軸 |
+| `options` | 解答欄に表示する文字 |
+
+現在の実装には `QUESTIONS[attempt.id - 1]` という参照があります。`id` を飛び番にしたり、配列順とずらしたりしないでください。`npm run test:data` がこの前提を検証します。
+
+なお、通常版の採点関数 `officialPoints` は、問2の部分点を現在も `"C"` / `"H"` と 3点・4点で直接判定しています。`partial` はまだ採点に使われていないため、正答や配点を変えるときは `app/exam/2025-q2.ts` と `officialPoints` の両方を確認してください。
 
 `axis` は解法そのものを全部書かず、「何へ変換するか」「どの定義へ戻るか」までに留めます。
 

@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import styles from "./guided.module.css";
 import { GUIDED_QUESTIONS } from "./data";
+import { getQuestionMeta } from "../exam/2025-q2";
 
 type Feedback = "idle" | "wrong" | "correct";
 
@@ -24,6 +25,8 @@ export default function GuidedRaid() {
   const [solutionOpen, setSolutionOpen] = useState(false);
 
   const question = GUIDED_QUESTIONS[questionIndex];
+  // 論点名・公式問題画像・公式解答画像は試験セット共通のメタデータから取る。
+  const meta = getQuestionMeta(question.id);
   const step = question.steps[stepIndex];
   const progress = ((stepIndex + (feedback === "correct" ? 1 : 0)) / question.steps.length) * 100;
   const understanding = Math.max(40, 100 - sessionMisses * 10);
@@ -159,6 +162,7 @@ export default function GuidedRaid() {
           <div className={styles.questionMap}>
             {GUIDED_QUESTIONS.map((item, index) => {
               const isComplete = completedSet.has(item.id);
+              const itemMeta = getQuestionMeta(item.id);
               return (
                 <button
                   type="button"
@@ -170,7 +174,7 @@ export default function GuidedRaid() {
                     <span>Q</span>{String(item.id).padStart(2, "0")}
                   </div>
                   <div className={styles.mapCopy}>
-                    <small>{item.topic}</small>
+                    <small>{itemMeta.topic}</small>
                     <strong>{item.title}</strong>
                     <p>{item.steps.length} STEPS</p>
                   </div>
@@ -199,7 +203,7 @@ export default function GuidedRaid() {
           <div className={styles.lessonProgress}>
             <div className={styles.progressCopy}>
               <span>STEP {stepIndex + 1} / {question.steps.length}</span>
-              <strong>{question.topic}</strong>
+              <strong>{meta.topic}</strong>
             </div>
             <div className={styles.progressTrack}><i style={{ width: progress + "%" }} /></div>
             <div className={styles.stepDots}>
@@ -218,7 +222,7 @@ export default function GuidedRaid() {
             </div>
             <p className={styles.goal}><span>GOAL</span>{question.goal}</p>
             <button className={styles.problemImage} type="button" onClick={() => setZoomOpen(true)} aria-label="公式問題を拡大する">
-              <img src={question.image} alt={"2025年度生保数理 問題2 (" + question.id + ")"} />
+              <img src={meta.image} alt={"2025年度生保数理 問題2 (" + question.id + ")"} />
               <span>⌕ TAP TO ZOOM</span>
             </button>
           </article>
@@ -320,7 +324,7 @@ export default function GuidedRaid() {
         <div className={styles.modalBackdrop} role="dialog" aria-modal="true" aria-label="公式問題の拡大" onClick={() => setZoomOpen(false)}>
           <div className={styles.modal} onClick={(event) => event.stopPropagation()}>
             <div className={styles.modalHead}><div><span>ORIGINAL QUESTION</span><strong>問題 {question.id}</strong></div><button type="button" onClick={() => setZoomOpen(false)}>×</button></div>
-            <div className={styles.zoomScroll}><img src={question.image} alt={"問題" + question.id + "の拡大"} /></div>
+            <div className={styles.zoomScroll}><img src={meta.image} alt={"問題" + question.id + "の拡大"} /></div>
           </div>
         </div>
       )}
@@ -330,7 +334,7 @@ export default function GuidedRaid() {
           <div className={styles.modal} onClick={(event) => event.stopPropagation()}>
             <div className={styles.modalHead}><div><span>OFFICIAL SOLUTION</span><strong>問題 {question.id} · 解答例</strong></div><button type="button" onClick={() => setSolutionOpen(false)}>×</button></div>
             <div className={styles.solutionScroll}>
-              {question.solutions.map((image) => <img key={image} src={image} alt={"問題" + question.id + "の公式解答"} />)}
+              {meta.solutions.map((image) => <img key={image} src={image} alt={"問題" + question.id + "の公式解答"} />)}
             </div>
           </div>
         </div>

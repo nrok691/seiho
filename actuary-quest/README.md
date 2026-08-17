@@ -71,12 +71,16 @@ Viteが表示したローカルURLをブラウザで開きます。APIキーや�
 ### 検証
 
 ```bash
+npm run test:data
+npm run typecheck
 npm run lint
 npm run build
 npm test
 ```
 
-通常の変更では、まず `npm run lint` と `npm run build` を通してください。`npm test` はビルドに加えて、生成されたWorkerがHTMLを返せることも確認します。
+`npm run test:data` は追加依存もビルドも不要で、問題データと誘導データの整合性（問題数、正答、公式配点、PAR合計、ステップ数、画像の実在など）を検証します。問題や誘導を触ったときは最初にこれを実行してください。
+
+通常の変更では、続けて `npm run lint` と `npm run build` を通してください。`npm test` はビルドに加えて、生成されたWorkerがHTMLを返せることも確認します。
 
 ## 主な構成
 

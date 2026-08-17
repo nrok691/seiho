@@ -3,22 +3,16 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { getQuestionMeta, TOTAL_PAR_SECONDS, type QuestionMeta } from "./exam/2025-q2";
 
-type Mode = "single" | "dual" | "multi";
 type Screen = "lobby" | "battle" | "result";
 type Hit = "critical" | "partial" | "miss";
 
-type Question = {
-  id: number;
-  topic: string;
+/** 試験セット共通のメタデータに、通常版だけで使う表示情報を足したもの。 */
+type Question = QuestionMeta & {
   title: string;
   axis: string;
-  mode: Mode;
   options: string[];
-  correct: string[];
-  image: string;
-  solutions: string[];
-  par: number;
 };
 
 type Attempt = {
@@ -51,102 +45,56 @@ const EMPTY_PROGRESS: Progress = {
 };
 const LETTERS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
 
+// 論点名・正答・画像・PAR・配点は app/exam/2025-q2.ts が唯一の出所。
+// ここではレイド表示用のタイトル・解法の軸・解答欄の文字だけを足す。
 const QUESTIONS: Question[] = [
   {
-    id: 1,
-    topic: "生命力・平均寿命",
+    ...getQuestionMeta(1),
     title: "区分的死力を突破せよ",
     axis: "μから生存関数へ戻し、平均寿命を生存確率の積分として置く。",
-    mode: "single",
     options: LETTERS,
-    correct: ["C"],
-    image: "/exam/2025-q2/q1.webp",
-    solutions: ["/exam/2025-q2/s1.webp"],
-    par: 240,
   },
   {
-    id: 2,
-    topic: "多重脱退・定常人口",
+    ...getQuestionMeta(2),
     title: "二つの集団を連立せよ",
     axis: "率のまま扱わず、年間死亡数・退職数と平均在籍人数に変換して連立する。",
-    mode: "dual",
     options: LETTERS,
-    correct: ["C", "H"],
-    image: "/exam/2025-q2/q2.webp",
-    solutions: ["/exam/2025-q2/s2.webp", "/exam/2025-q2/s2b.webp"],
-    par: 420,
   },
   {
-    id: 3,
-    topic: "年金・計算基数",
+    ...getQuestionMeta(3),
     title: "正しい公式を選び抜け",
     axis: "公式を定義の和へ戻し、開始添字・支払回数・端点を検算する。",
-    mode: "multi",
     options: ["A", "B", "C", "D", "E", "F"],
-    correct: ["A", "C", "D"],
-    image: "/exam/2025-q2/q3.webp",
-    solutions: ["/exam/2025-q2/s3.webp"],
-    par: 240,
   },
   {
-    id: 4,
-    topic: "保険現価・微分",
+    ...getQuestionMeta(4),
     title: "利率微分の鎖を切れ",
     axis: "dv/di = -v²。現価を級数表示して微分し、支払時点を係数として出す。",
-    mode: "single",
     options: LETTERS,
-    correct: ["J"],
-    image: "/exam/2025-q2/q4.webp",
-    solutions: ["/exam/2025-q2/s4.webp"],
-    par: 300,
   },
   {
-    id: 5,
-    topic: "返戻金・責任準備金",
+    ...getQuestionMeta(5),
     title: "二つの返戻方式を比較せよ",
     axis: "第6年度以降の共通給付を先に消し、第5年度までの給付差だけを比較する。",
-    mode: "single",
     options: LETTERS,
-    correct: ["G"],
-    image: "/exam/2025-q2/q5.webp",
-    solutions: ["/exam/2025-q2/s5.webp"],
-    par: 360,
   },
   {
-    id: 6,
-    topic: "多生命年金",
+    ...getQuestionMeta(6),
     title: "四生命の給付を分解せよ",
     axis: "給付を生存人数mの関数として、生存指標の積の線形結合へ展開する。",
-    mode: "single",
     options: LETTERS,
-    correct: ["B"],
-    image: "/exam/2025-q2/q6.webp",
-    solutions: ["/exam/2025-q2/s6.webp"],
-    par: 300,
   },
   {
-    id: 7,
-    topic: "就業不能保険",
+    ...getQuestionMeta(7),
     title: "状態遷移を現価化せよ",
     axis: "就業不能への移行給付用Mと、状態別死亡給付用Mを分けて現価化する。",
-    mode: "single",
     options: LETTERS,
-    correct: ["H"],
-    image: "/exam/2025-q2/q7.webp",
-    solutions: ["/exam/2025-q2/s7.webp"],
-    par: 360,
   },
   {
-    id: 8,
-    topic: "入院給付・分布",
+    ...getQuestionMeta(8),
     title: "三十日単位の壁を越えろ",
     axis: "共通因子を比率で消し、期待給付日数の比だけを計算する。",
-    mode: "single",
     options: LETTERS,
-    correct: ["H"],
-    image: "/exam/2025-q2/q8.webp",
-    solutions: ["/exam/2025-q2/s8.webp"],
-    par: 240,
   },
 ];
 
@@ -505,7 +453,7 @@ export default function Home() {
 
           <div className="mission-grid">
             <div><strong>8</strong><span>QUESTIONS</span></div>
-            <div><strong>42:00</strong><span>TARGET</span></div>
+            <div><strong>{formatTime(TOTAL_PAR_SECONDS)}</strong><span>TARGET</span></div>
             <div><strong>56</strong><span>OFFICIAL PTS</span></div>
           </div>
 
