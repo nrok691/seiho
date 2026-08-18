@@ -3,7 +3,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { getQuestionMeta, TOTAL_PAR_SECONDS, type QuestionMeta } from "./exam/2025-q2";
+import {
+  getQuestionMeta,
+  TOTAL_OFFICIAL_POINTS,
+  TOTAL_PAR_SECONDS,
+  type QuestionMeta,
+} from "./exam/2025-q2";
+import { isFullMark, officialPoints } from "./scoring";
 import {
   EMPTY_RAID_PROGRESS,
   readRaidProgress,
@@ -35,6 +41,9 @@ type Attempt = {
 };
 
 const NOTE_TAGS = ["問題文の読み取り", "方針・立式", "公式の想起", "計算", "時間配分"];
+// 結果ランクの下限。公式配点ではなくゲーム内評価なので、この値は現行のまま維持する。
+const RANK_A_MIN = 49;
+const RANK_B_MIN = 35;
 const LETTERS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
 
 // 論点名・正答・画像・PAR・配点は app/exam/2025-q2.ts が唯一の出所。
@@ -114,22 +123,11 @@ function nextStreak(previous: RaidProgress) {
   return days === 1 ? previous.streak + 1 : 1;
 }
 
-function sameSet(left: string[], right: string[]) {
-  return [...left].sort().join("") === [...right].sort().join("");
-}
-
 function displayAnswer(question: Question, picks: string[]) {
   if (question.mode === "dual") {
     return "① " + (picks[0] || "−") + " / ② " + (picks[1] || "−");
   }
   return picks.length ? [...picks].sort().join("・") : "未回答";
-}
-
-function officialPoints(question: Question, picks: string[]) {
-  if (question.mode === "dual") {
-    return (picks[0] === "C" ? 3 : 0) + (picks[1] === "H" ? 4 : 0);
-  }
-  return sameSet(picks, question.correct) ? 7 : 0;
 }
 
 function playFx(kind: "start" | Hit | "finish", enabled: boolean) {
@@ -190,11 +188,15 @@ export default function Home() {
   const [stuckNotes, setStuckNotes] = useState<StuckNotes>({});
 
   const question = QUESTIONS[index];
-  const bossHp = Math.max(56 - officialScore, 0);
+  const bossHp = Math.max(TOTAL_OFFICIAL_POINTS - officialScore, 0);
   const ready = question.mode === "dual" ? Boolean(picks[0] && picks[1]) : picks.length > 0;
-  const resultRank = officialScore === 56 ? "S" : officialScore >= 49 ? "A" : officialScore >= 35 ? "B" : "C";
+  const resultRank =
+    officialScore === TOTAL_OFFICIAL_POINTS ? "S" : officialScore >= RANK_A_MIN ? "A" : officialScore >= RANK_B_MIN ? "B" : "C";
   const reviewTargets = useMemo(
-    () => attempts.filter((attempt) => attempt.official < 7).map((attempt) => QUESTIONS[attempt.id - 1].topic),
+    () =>
+      attempts
+        .filter((attempt) => attempt.official < QUESTIONS[attempt.id - 1].points)
+        .map((attempt) => QUESTIONS[attempt.id - 1].topic),
     [attempts],
   );
   const notedQuestions = useMemo(
@@ -311,7 +313,7 @@ export default function Home() {
   function submitAnswer() {
     if (!ready || answered) return;
     const earned = officialPoints(question, picks);
-    const full = earned === 7;
+    const full = isFullMark(earned, question);
     const status: Hit = full ? "critical" : earned > 0 ? "partial" : "miss";
     const nextCombo = full ? combo + 1 : 0;
     const multiplier = full ? 1 + Math.min(nextCombo - 1, 4) * 0.25 : 1;
@@ -411,7 +413,7 @@ export default function Home() {
               <div><p className="micro-label">RAID BOSS</p><h2>2025年度 問題2</h2></div>
               <div className="threat-level"><span>THREAT</span> S</div>
             </div>
-            <div className="hp-label"><span>BOSS HP</span><strong>56 / 56</strong></div>
+            <div className="hp-label"><span>BOSS HP</span><strong>{TOTAL_OFFICIAL_POINTS} / {TOTAL_OFFICIAL_POINTS}</strong></div>
             <div className="hp-track"><span style={{ width: "100%" }} /></div>
             <div className="question-pips" aria-label="全8問">
               {QUESTIONS.map((item) => <span key={item.id}>{String(item.id).padStart(2, "0")}</span>)}
@@ -430,7 +432,7 @@ export default function Home() {
           <div className="mission-grid">
             <div><strong>8</strong><span>QUESTIONS</span></div>
             <div><strong>{formatTime(TOTAL_PAR_SECONDS)}</strong><span>TARGET</span></div>
-            <div><strong>56</strong><span>OFFICIAL PTS</span></div>
+            <div><strong>{TOTAL_OFFICIAL_POINTS}</strong><span>OFFICIAL PTS</span></div>
           </div>
 
           <div className="rules-card">
@@ -441,7 +443,7 @@ export default function Home() {
           </div>
 
           <div className="save-strip">
-            <div><span>BEST</span><strong>{progress.bestOfficial}<small>/56</small></strong></div>
+            <div><span>BEST</span><strong>{progress.bestOfficial}<small>/{TOTAL_OFFICIAL_POINTS}</small></strong></div>
             <div><span>HIGH SCORE</span><strong>{progress.bestScore.toLocaleString()}</strong></div>
             <div><span>STREAK</span><strong>{progress.streak}<small>日</small></strong></div>
           </div>
@@ -458,9 +460,9 @@ export default function Home() {
           </header>
 
           <section key={"boss-" + (hit?.key || index)} className={"boss-hud " + (hit ? "boss-" + hit.status : "")}>
-            <div className="boss-line"><div><span className="live-dot" />RAID BOSS</div><strong>{bossHp} <small>/ 56 HP</small></strong></div>
+            <div className="boss-line"><div><span className="live-dot" />RAID BOSS</div><strong>{bossHp} <small>/ {TOTAL_OFFICIAL_POINTS} HP</small></strong></div>
             <div className="boss-name">生保数理・問題2</div>
-            <div className="hp-track hp-battle"><span style={{ width: String((bossHp / 56) * 100) + "%" }} /></div>
+            <div className="hp-track hp-battle"><span style={{ width: String((bossHp / TOTAL_OFFICIAL_POINTS) * 100) + "%" }} /></div>
             <div className="battle-pips">
               {QUESTIONS.map((item, itemIndex) => (
                 <span key={item.id} className={itemIndex < index ? "done" : itemIndex === index ? "current" : ""} />
@@ -543,7 +545,7 @@ export default function Home() {
                   <div><span>CORRECT</span><strong>{attempts.at(-1)?.correct}</strong></div>
                 </div>
                 <div className="reward-ledger">
-                  <div><span>公式得点</span><strong>{lastOfficial} / 7</strong></div>
+                  <div><span>公式得点</span><strong>{lastOfficial} / {question.points}</strong></div>
                   <div><span>コンボ倍率</span><strong>×{lastMultiplier.toFixed(2)}</strong></div>
                   <div className={lastBonuses.speed ? "bonus-on" : ""}><span>速解き</span><strong>+{lastBonuses.speed}</strong></div>
                   <div className={lastBonuses.noHint ? "bonus-on" : ""}><span>ノーヒント</span><strong>+{lastBonuses.noHint}</strong></div>
@@ -601,15 +603,15 @@ export default function Home() {
             <p>2025 OFFICIAL RAID</p>
             <div className={"rank-orb rank-" + resultRank.toLowerCase()}><small>RANK</small><strong>{resultRank}</strong></div>
             <h1>{resultRank === "S" ? "PERFECT CLEAR" : resultRank === "A" ? "BOSS DEFEATED" : resultRank === "B" ? "CORE DAMAGED" : "RETRY READY"}</h1>
-            <p className="result-message">{resultRank === "S" ? "56点。過去問を完全制圧した。" : "残ったHPが、次に伸びる場所だ。"}</p>
+            <p className="result-message">{resultRank === "S" ? TOTAL_OFFICIAL_POINTS + "点。過去問を完全制圧した。" : "残ったHPが、次に伸びる場所だ。"}</p>
           </div>
           <div className="result-score-card">
-            <div className="official-total"><span>OFFICIAL SCORE</span><strong>{officialScore}<small>/56</small></strong></div>
+            <div className="official-total"><span>OFFICIAL SCORE</span><strong>{officialScore}<small>/{TOTAL_OFFICIAL_POINTS}</small></strong></div>
             <div className="result-hp"><span>残りBOSS HP</span><strong>{bossHp}</strong></div>
             <div className="result-score-line"><span>BATTLE SCORE</span><strong>{battleScore.toLocaleString()}</strong></div>
             <div className="result-triple">
               <div><span>TIME</span><strong>{formatTime(elapsed)}</strong></div>
-              <div><span>FULL SCORE</span><strong>{attempts.filter((attempt) => attempt.official === 7).length}<small>/8</small></strong></div>
+              <div><span>FULL SCORE</span><strong>{attempts.filter((attempt) => attempt.official === QUESTIONS[attempt.id - 1].points).length}<small>/8</small></strong></div>
               <div><span>BEST COMBO</span><strong>×{bestCombo}</strong></div>
             </div>
           </div>
@@ -619,7 +621,7 @@ export default function Home() {
               <div className="attempt-row" key={attempt.id}>
                 <span className={"attempt-mark " + attempt.status}>{attempt.status === "critical" ? "✓" : attempt.status === "partial" ? "△" : "×"}</span>
                 <div><strong>Q{String(attempt.id).padStart(2, "0")} · {QUESTIONS[attempt.id - 1].topic}</strong><small>{formatTime(attempt.seconds)} · {attempt.usedHint ? "HINT USED" : "NO HINT"}</small></div>
-                <b>{attempt.official}<small>/7</small></b>
+                <b>{attempt.official}<small>/{QUESTIONS[attempt.id - 1].points}</small></b>
               </div>
             ))}
           </section>

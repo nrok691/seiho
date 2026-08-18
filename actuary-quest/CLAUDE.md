@@ -31,6 +31,7 @@ ACTUARY QUESTは、アクチュアリー試験「生保数理」の実際の過�
 | 場所 | 責務 |
 |---|---|
 | `app/exam/2025-q2.ts` | 試験セット共通のメタデータ。論点名、出題形式、正答、公式配点、部分点、問題・解答画像、PAR |
+| `app/scoring.ts` | 公式得点の計算。配点・部分点はメタデータから取る |
 | `app/storage.ts` | 端末内保存の読み書き。キー定義、型検証、保存失敗の検知 |
 | `app/page.tsx` | 通常版。レイド用タイトルと解法の軸、採点、スコア、メモ、端末保存、全画面状態 |
 | `app/globals.css` | 通常版と共通のグローバルスタイル |
@@ -41,6 +42,7 @@ ACTUARY QUESTは、アクチュアリー試験「生保数理」の実際の過�
 | `app/layout.tsx` | メタデータ、モバイルviewport、全体レイアウト |
 | `tests/exam-data.test.mjs` | 試験データの整合性テスト（依存不要） |
 | `tests/storage.test.mjs` | 端末内保存の読み書きテスト（依存不要） |
+| `tests/scoring.test.mjs` | 公式得点の計算テスト（依存不要） |
 | `tests/rendered-html.test.mjs` | ビルド成果物がHTMLを返すことの最小テスト |
 | `.openai/hosting.json` | OpenAI Sitesの識別・バインディング情報 |
 

@@ -105,7 +105,7 @@ solutions: [
 
 現在の実装には `QUESTIONS[attempt.id - 1]` という参照があります。`id` を飛び番にしたり、配列順とずらしたりしないでください。`npm run test:data` がこの前提を検証します。
 
-なお、通常版の採点関数 `officialPoints` は、問2の部分点を現在も `"C"` / `"H"` と 3点・4点で直接判定しています。`partial` はまだ採点に使われていないため、正答や配点を変えるときは `app/exam/2025-q2.ts` と `officialPoints` の両方を確認してください。
+通常版の採点関数 `officialPoints`（`app/scoring.ts`）は、`points` と `partial` だけを見て得点を出します。選択肢の文字や点数を採点コードへ直接書かないでください。配点を変えるときは `app/exam/2025-q2.ts` だけを直し、`npm run test:unit` で採点結果を確認します。
 
 `axis` は解法そのものを全部書かず、「何へ変換するか」「どの定義へ戻るか」までに留めます。
 
