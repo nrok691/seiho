@@ -31,6 +31,7 @@ ACTUARY QUESTは、アクチュアリー試験「生保数理」の実際の過�
 | 場所 | 責務 |
 |---|---|
 | `app/exam/2025-q2.ts` | 試験セット共通のメタデータ。論点名、出題形式、正答、公式配点、部分点、問題・解答画像、PAR |
+| `app/storage.ts` | 端末内保存の読み書き。キー定義、型検証、保存失敗の検知 |
 | `app/page.tsx` | 通常版。レイド用タイトルと解法の軸、採点、スコア、メモ、端末保存、全画面状態 |
 | `app/globals.css` | 通常版と共通のグローバルスタイル |
 | `app/guided/page.tsx` | 誘導版。マップ、ステップ進行、フィードバック、完了保存 |
@@ -38,7 +39,8 @@ ACTUARY QUESTは、アクチュアリー試験「生保数理」の実際の過�
 | `app/guided/guided.module.css` | 誘導版専用スタイル |
 | `public/exam/2025-q2/` | 公式問題 `q*.webp` と公式解答 `s*.webp` |
 | `app/layout.tsx` | メタデータ、モバイルviewport、全体レイアウト |
-| `tests/exam-data.test.mjs` | 試験データの整合性テスト（`npm run test:data`、依存不要） |
+| `tests/exam-data.test.mjs` | 試験データの整合性テスト（依存不要） |
+| `tests/storage.test.mjs` | 端末内保存の読み書きテスト（依存不要） |
 | `tests/rendered-html.test.mjs` | ビルド成果物がHTMLを返すことの最小テスト |
 | `.openai/hosting.json` | OpenAI Sitesの識別・バインディング情報 |
 
@@ -53,6 +55,8 @@ ACTUARY QUESTは、アクチュアリー試験「生保数理」の実際の過�
 | `actuary-guided-progress-v1` | 誘導版でクリア済みの問題ID | JSON array of numbers |
 
 キー名を変更しないでください。やむを得ず形式を変える場合は、旧キーを読み、新形式へ一度だけ移行できる実装とテストを追加してください。
+
+読み書きは `app/storage.ts` に集約しています。`localStorage` を各コンポーネントから直接触らないでください。読み込み時に型を検証し、壊れた値でも画面が落ちないようにしています。保存に失敗した場合は握り潰さず警告を出します。
 
 現時点ではバックエンド、認証、外部APIはありません。`localStorage` は端末内の学習状態にだけ使用しています。
 

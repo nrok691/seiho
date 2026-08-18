@@ -6,10 +6,9 @@ import Link from "next/link";
 import styles from "./guided.module.css";
 import { GUIDED_QUESTIONS } from "./data";
 import { getQuestionMeta } from "../exam/2025-q2";
+import { readGuidedProgress, writeGuidedProgress } from "../storage";
 
 type Feedback = "idle" | "wrong" | "correct";
-
-const PROGRESS_KEY = "actuary-guided-progress-v1";
 
 export default function GuidedRaid() {
   const [screen, setScreen] = useState<"map" | "lesson">("map");
@@ -33,20 +32,10 @@ export default function GuidedRaid() {
 
   const completedSet = useMemo(() => new Set(completed), [completed]);
 
+  // 通常版と同じく、requestAnimationFrame を挟まずエフェクト内で直接復元する。
   useEffect(() => {
-    let frame = 0;
-    try {
-      const saved = window.localStorage.getItem(PROGRESS_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          frame = window.requestAnimationFrame(() => setCompleted(parsed));
-        }
-      }
-    } catch {
-      // Progress persistence is optional.
-    }
-    return () => window.cancelAnimationFrame(frame);
+    const saved = readGuidedProgress();
+    if (saved) setCompleted(saved);
   }, []);
 
   useEffect(() => {
@@ -68,11 +57,8 @@ export default function GuidedRaid() {
 
   function persistCompleted(next: number[]) {
     setCompleted(next);
-    try {
-      window.localStorage.setItem(PROGRESS_KEY, JSON.stringify(next));
-    } catch {
-      // The lesson remains usable without storage.
-    }
+    // 保存できなくても学習は続けられる。失敗は storage 側で警告を出す。
+    writeGuidedProgress(next);
   }
 
   function startQuestion(index: number) {

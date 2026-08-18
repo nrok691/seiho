@@ -4,6 +4,15 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { getQuestionMeta, TOTAL_PAR_SECONDS, type QuestionMeta } from "./exam/2025-q2";
+import {
+  EMPTY_RAID_PROGRESS,
+  readRaidProgress,
+  readStuckNotes,
+  writeRaidProgress,
+  writeStuckNotes,
+  type RaidProgress,
+  type StuckNotes,
+} from "./storage";
 
 type Screen = "lobby" | "battle" | "result";
 type Hit = "critical" | "partial" | "miss";
@@ -25,24 +34,7 @@ type Attempt = {
   usedHint: boolean;
 };
 
-type Progress = {
-  bestScore: number;
-  bestOfficial: number;
-  clears: number;
-  streak: number;
-  lastStudy: string;
-};
-
-const STORAGE_KEY = "actuary-raid-progress-v2";
-const NOTES_STORAGE_KEY = "actuary-raid-stuck-notes-v1";
 const NOTE_TAGS = ["問題文の読み取り", "方針・立式", "公式の想起", "計算", "時間配分"];
-const EMPTY_PROGRESS: Progress = {
-  bestScore: 0,
-  bestOfficial: 0,
-  clears: 0,
-  streak: 0,
-  lastStudy: "",
-};
 const LETTERS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
 
 // 論点名・正答・画像・PAR・配点は app/exam/2025-q2.ts が唯一の出所。
@@ -112,7 +104,7 @@ function getTodayKey() {
   }).format(new Date());
 }
 
-function nextStreak(previous: Progress) {
+function nextStreak(previous: RaidProgress) {
   const today = getTodayKey();
   if (previous.lastStudy === today) return Math.max(previous.streak, 1);
   if (!previous.lastStudy) return 1;
@@ -174,7 +166,7 @@ function playFx(kind: "start" | Hit | "finish", enabled: boolean) {
 
 export default function Home() {
   const [screen, setScreen] = useState<Screen>("lobby");
-  const [progress, setProgress] = useState<Progress>(EMPTY_PROGRESS);
+  const [progress, setProgress] = useState<RaidProgress>(EMPTY_RAID_PROGRESS);
   const [index, setIndex] = useState(0);
   const [picks, setPicks] = useState<string[]>([]);
   const [activeSlot, setActiveSlot] = useState(0);
@@ -195,7 +187,7 @@ export default function Home() {
   const [zoomOpen, setZoomOpen] = useState(false);
   const [solutionOpen, setSolutionOpen] = useState(false);
   const [sound, setSound] = useState(true);
-  const [stuckNotes, setStuckNotes] = useState<Record<string, string>>({});
+  const [stuckNotes, setStuckNotes] = useState<StuckNotes>({});
 
   const question = QUESTIONS[index];
   const bossHp = Math.max(56 - officialScore, 0);
@@ -210,23 +202,14 @@ export default function Home() {
     [stuckNotes],
   );
 
+  // エフェクトはハイドレーション後に走るので、ここで直接 state へ入れて問題ない。
+  // 以前は requestAnimationFrame を挟んでいたが、クリーンアップで取り消されうる隙があり、
+  // また成績とメモが同じ try に入っていたため、片方の失敗で両方復元されない構造だった。
   useEffect(() => {
-    let frame = 0;
-    try {
-      const saved = window.localStorage.getItem(STORAGE_KEY);
-      const savedNotes = window.localStorage.getItem(NOTES_STORAGE_KEY);
-      if (saved || savedNotes) {
-        const restored = saved ? { ...EMPTY_PROGRESS, ...JSON.parse(saved) } : null;
-        const restoredNotes = savedNotes ? JSON.parse(savedNotes) : null;
-        frame = window.requestAnimationFrame(() => {
-          if (restored) setProgress(restored);
-          if (restoredNotes && typeof restoredNotes === "object") setStuckNotes(restoredNotes);
-        });
-      }
-    } catch {
-      // Storage is optional.
-    }
-    return () => window.cancelAnimationFrame(frame);
+    const savedProgress = readRaidProgress();
+    if (savedProgress) setProgress(savedProgress);
+    const savedNotes = readStuckNotes();
+    if (savedNotes) setStuckNotes(savedNotes);
   }, []);
 
   useEffect(() => {
@@ -255,13 +238,10 @@ export default function Home() {
     };
   }, [zoomOpen, solutionOpen]);
 
-  function persist(next: Progress) {
+  function persist(next: RaidProgress) {
     setProgress(next);
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-    } catch {
-      // The raid still works without persistence.
-    }
+    // 保存できなくても学習は続けられる。失敗は storage 側で警告を出す。
+    writeRaidProgress(next);
   }
 
   function initialPicks(target: Question) {
@@ -276,11 +256,7 @@ export default function Home() {
       delete next[String(questionId)];
     }
     setStuckNotes(next);
-    try {
-      window.localStorage.setItem(NOTES_STORAGE_KEY, JSON.stringify(next));
-    } catch {
-      // Notes remain usable for the current session if storage is unavailable.
-    }
+    writeStuckNotes(next);
   }
 
   function addNoteTag(tag: string) {
@@ -373,7 +349,7 @@ export default function Home() {
   }
 
   function finishRaid() {
-    const next: Progress = {
+    const next: RaidProgress = {
       bestScore: Math.max(progress.bestScore, battleScore),
       bestOfficial: Math.max(progress.bestOfficial, officialScore),
       clears: progress.clears + 1,
