@@ -35,7 +35,11 @@ export default function GuidedRaid() {
   // 通常版と同じく、requestAnimationFrame を挟まずエフェクト内で直接復元する。
   useEffect(() => {
     const saved = readGuidedProgress();
-    if (saved) setCompleted(saved);
+    if (saved) {
+      // localStorage はSSR時に読めないため、マウント後の一度だけ復元する。
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setCompleted(saved);
+    }
   }, []);
 
   useEffect(() => {

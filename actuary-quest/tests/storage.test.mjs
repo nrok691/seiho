@@ -168,12 +168,22 @@ describe("誘導版進捗の読み込み", () => {
 });
 
 describe("保存の失敗を検知する", () => {
-  it("保存先が使えないときは false を返し、例外を投げない", () => {
-    withSilencedWarn(() => {
+  it("保存先が使えないときは警告して false を返し、例外を投げない", () => {
+    const original = console.warn;
+    const warnings = [];
+    console.warn = (...args) => warnings.push(args);
+    try {
       assert.equal(writeRaidProgress(EMPTY_RAID_PROGRESS, null), false);
       assert.equal(writeStuckNotes({}, null), false);
       assert.equal(writeGuidedProgress([], null), false);
-    });
+    } finally {
+      console.warn = original;
+    }
+    assert.equal(warnings.length, 3);
+    for (const warning of warnings) {
+      assert.match(String(warning[0]), /localStorage への保存に失敗しました/);
+      assert.equal(warning[1], "保存先を取得できませんでした");
+    }
   });
 
   it("setItem が例外を投げても false を返すだけで止まらない", () => {

@@ -209,9 +209,15 @@ export default function Home() {
   // また成績とメモが同じ try に入っていたため、片方の失敗で両方復元されない構造だった。
   useEffect(() => {
     const savedProgress = readRaidProgress();
-    if (savedProgress) setProgress(savedProgress);
+    if (savedProgress) {
+      // localStorage はSSR時に読めないため、マウント後の一度だけ復元する。
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setProgress(savedProgress);
+    }
     const savedNotes = readStuckNotes();
-    if (savedNotes) setStuckNotes(savedNotes);
+    if (savedNotes) {
+      setStuckNotes(savedNotes);
+    }
   }, []);
 
   useEffect(() => {

@@ -65,7 +65,10 @@ function readRaw(key: string, storage?: StorageLike | null): string | null {
  */
 function writeRaw(key: string, value: string, storage?: StorageLike | null): boolean {
   const target = storage === undefined ? defaultStorage() : storage;
-  if (!target) return false;
+  if (!target) {
+    reportWriteFailure(key, "保存先を取得できませんでした");
+    return false;
+  }
   try {
     target.setItem(key, value);
     if (target.getItem(key) !== value) {
